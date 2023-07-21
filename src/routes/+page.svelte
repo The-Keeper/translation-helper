@@ -16,7 +16,16 @@ let format: FileFormat = FileFormat.AsciiDoc;
 
 function exportToAsciiDoc(data) {
     return data.map(item => {
-        return ["// "+ item.orig, item.trns].join("\r\n");
+		let orig = item.orig + '';
+		if (orig.trim().length == 0) {
+			return '\r\n';
+		}
+		if (orig.startsWith('=')) {
+			orig = '//' + orig
+		} else {
+			orig = '// ' + orig
+		}
+        return [orig, item.trns].join("\r\n");
     }).join("\r\n\r\n");
 }
 
@@ -46,6 +55,17 @@ function handleChange(event) {
 		}
     }
 
+
+function handleComment(line: string) {
+	const comment_start_patterns = [ "//", "[//]:" ]
+	let res = line;
+	for (let c of comment_start_patterns) {
+		if (line.startsWith(c))
+			res = line.substring(c.length)
+	}
+	return res.trim()
+}
+
 function loadDataFromText(text: string) {
 	let new_data = []
 
@@ -56,7 +76,7 @@ function loadDataFromText(text: string) {
 		for (let i=0;i<line_arr.length;i++) {
 			let l = line_arr[i]
 			if (l.startsWith("//") || l.startsWith("[//]:")) {
-				orig.push(l)
+				orig.push(handleComment(l))
 			} else if (!l.trim().length) {
 				new_data.push({id: i, orig: orig.join('\r\n'), trns: trns.join('\r\n') })
 				orig = []
